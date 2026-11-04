@@ -1,1 +1,6 @@
-
+Day 1
+Goal: Set up codespaces with containerlab
+Tried: ...
+Broke: ...
+Learned: From AI instructions on how to setup Codespaces, Learned from Youtube on where to find, how to install ContainerLab in Codespaces
+Next: topology creation using mentioned websites
