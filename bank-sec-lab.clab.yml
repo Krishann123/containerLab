@@ -1,0 +1,57 @@
+name: bank-sec-lab
+
+topology:
+  nodes:
+    # Layer 2 Switches for Site A Zones
+    sw-app:
+      kind: bridge
+    sw-db:
+      kind: bridge
+
+    # Site A Firewall (nftables router/gateway)
+    fw-site-a:
+      kind: linux
+      image: ghcr.io/srl-labs/containerlab-dind-slim:latest
+      binds:
+        - /lib/modules:/lib/modules:ro
+
+    # Site A Endpoints (App Zone & DB Zone PCs)
+    pc1:
+      kind: linux
+      image: alpine:latest
+    pc2:
+      kind: linux
+      image: alpine:latest
+    pc3:
+      kind: linux
+      image: alpine:latest
+    pc4:
+      kind: linux
+      image: alpine:latest
+
+    # Site B Firewall & Logging Collector
+    fw-site-b:
+      kind: linux
+      image: ghcr.io/srl-labs/containerlab-dind-slim:latest
+      binds:
+        - /lib/modules:/lib/modules:ro
+    rsyslog-server:
+      kind: linux
+      image: alpine:latest
+
+  links:
+    # --- SITE A: APP ZONE ---
+    - endpoints: ["pc1:eth1", "sw-app:eth1"]
+    - endpoints: ["pc2:eth1", "sw-app:eth2"]
+    - endpoints: ["fw-site-a:eth1", "sw-app:eth3"]
+
+    # --- SITE A: DATABASE ZONE ---
+    - endpoints: ["pc3:eth1", "sw-db:eth1"]
+    - endpoints: ["pc4:eth1", "sw-db:eth2"]
+    - endpoints: ["fw-site-a:eth2", "sw-db:eth3"]
+
+    # --- TRANSIT VPN LINK (P2P /30) ---
+    - endpoints: ["fw-site-a:eth3", "fw-site-b:eth1"]
+
+    # --- SITE B: LOGGING PLATFORM ---
+    - endpoints: ["fw-site-b:eth2", "rsyslog-server:eth1"]
