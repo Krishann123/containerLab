@@ -1,0 +1,58 @@
+nspect if connection is proper:
+
+sudo containerlab inspect -t bank-sec-lab.clab.yml
+
+
+
+Inspect the data interfaces on your endpoint containers to confirm the correct RFC 5737 subnets are bound:
+
+docker exec -it clab-bank-sec-lab-pc1 ip addr show eth1
+
+docker exec -it clab-bank-sec-lab-pc3 ip addr show eth1
+
+
+
+verify routing tables:
+
+docker exec -it clab-bank-sec-lab-pc1 ip route 
+
+Check pubkey site a and b
+docker exec -it clab-bank-sec-lab-fw-site-b cat /etc/wireguard/pub.key
+docker exec -it clab-bank-sec-lab-fw-site-a cat /etc/wireguard/pub.key
+
+check if vpn site-to-site is working properly
+
+docker exec -it clab-bank-sec-lab-fw-site-a wg show
+docker exec -it clab-bank-sec-lab-fw-site-a ping -c 3 10.100.100.2
+
+docker exec -it clab-bank-sec-lab-pc1 sh -c "echo 'Security compliance test log' | nc -u -w 1 198.51.100.10 514"
+
+should be blocked
+docker exec -it clab-bank-sec-lab-pc1 ping -c 3 198.51.100.10
+
+Run this command on the collector to see what files were written inside the directory:
+docker exec -it clab-bank-sec-lab-rsyslog-server ls -la /var/log/remote/rsyslog-server/
+
+View the contents of the log file to confirm your test message was successfully written:
+docker exec -it clab-bank-sec-lab-rsyslog-server cat /var/log/remote/rsyslog-server/.log
+
+use recursive ls to view all folders and files under the remote log mount:
+docker exec -it clab-bank-sec-lab-rsyslog-server ls -laR /var/log/remote/
+
+
+*****Proof Commands*******
+
+**tunnel counter going up when sending a log**
+
+docker exec $F wg show wg0 transfer
+docker exec $F logger -t proof "tunnel test"
+sleep 1
+docker exec $F wg show wg0 transfer
+
+should work 
+docker exec $F ping -c2 -W1 10.100.100.2 
+
+Fails
+docker exec $F ping -c2 -W1 198.51.100.10 **only UDP 514 is allowed
+
+

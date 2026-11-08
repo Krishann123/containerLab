@@ -11,9 +11,7 @@ topology:
     # Site A Firewall (nftables router/gateway)
     fw-site-a:
       kind: linux
-      image: ghcr.io/srl-labs/containerlab-dind-slim:latest
-      binds:
-        - /lib/modules:/lib/modules:ro
+      image: alpine:latest
 
     # Site A Endpoints (App Zone & DB Zone PCs)
     pc1:
@@ -32,23 +30,21 @@ topology:
     # Site B Firewall & Logging Collector
     fw-site-b:
       kind: linux
-      image: ghcr.io/srl-labs/containerlab-dind-slim:latest
-      binds:
-        - /lib/modules:/lib/modules:ro
+      image: alpine:latest
     rsyslog-server:
       kind: linux
       image: alpine:latest
 
   links:
     # --- SITE A: APP ZONE ---
-    - endpoints: ["pc1:eth1", "sw-app:eth1"]
-    - endpoints: ["pc2:eth1", "sw-app:eth2"]
-    - endpoints: ["fw-site-a:eth1", "sw-app:eth3"]
+    - endpoints: ["pc1:eth1", "sw-app:app-p1"]
+    - endpoints: ["pc2:eth1", "sw-app:app-p2"]
+    - endpoints: ["fw-site-a:eth1", "sw-app:app-p3"]
 
     # --- SITE A: DATABASE ZONE ---
-    - endpoints: ["pc3:eth1", "sw-db:eth1"]
-    - endpoints: ["pc4:eth1", "sw-db:eth2"]
-    - endpoints: ["fw-site-a:eth2", "sw-db:eth3"]
+    - endpoints: ["pc3:eth1", "sw-db:db-p1"]
+    - endpoints: ["pc4:eth1", "sw-db:db-p2"]
+    - endpoints: ["fw-site-a:eth2", "sw-db:db-p3"]
 
     # --- TRANSIT VPN LINK (P2P /30) ---
     - endpoints: ["fw-site-a:eth3", "fw-site-b:eth1"]
