@@ -49,6 +49,13 @@ docker exec $F logger -t proof "tunnel test"
 sleep 1
 docker exec $F wg show wg0 transfer
 
+***Sends 50 messages at once***
+docker exec $F wg show wg0 transfer
+docker exec $F sh -c 'for i in $(seq 1 50); do logger -t proof "burst $i"; done'
+sleep 1
+docker exec $F wg show wg0 transfer
+docker exec $S grep -c burst /var/log/remote/fw-site-a/syslog.log
+
 should work 
 docker exec $F ping -c2 -W1 10.100.100.2 
 
