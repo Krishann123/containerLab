@@ -19,5 +19,10 @@ Tried: Asked AI to generate a yaml file that has all the info/data needed for th
 Broke: ...
 Learned: Basics of docker, How to use docker containers from youtube and AI. 
 Next: installing and configuring rsyslog on site B
-=======
->>>>>>> b846ec5 (Working WireGuard tunnel, FW-B default-deny rules, rsyslog collector, rebuild script)
+
+Day 4
+Goal: finished up rsyslog and confirmed that setup is working properly. 
+Tried: rebuilding the whole project from scratch so its easier for me to make the rebuild.sh file
+Broke: ...
+Learned: how to setup rsyslog, use of udp port 514 and how to route logs properly through tunnel without it being stopped by the firewall through AI gemini notebooks feature.
+Next: finishing up one build command deliverable using the rebuild.sh 
