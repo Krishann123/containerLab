@@ -18,6 +18,7 @@ for n in $A $B; do
   docker exec $n apk add --no-cache iproute2 nftables wireguard-tools rsyslog >/dev/null
 done
 docker exec $S apk add --no-cache iproute2 rsyslog >/dev/null
+docker exec $A apk add --no-cache ulogd >/dev/null
 
 echo "## 3. addresses and forwarding (the underlay)"
 docker exec $A sh -c '
@@ -100,3 +101,5 @@ sleep 2
 docker exec $S sh -c 'find /var/log/remote -type f; cat /var/log/remote/*/syslog.log'
 
 sh scripts/zones.sh
+
+sh scripts/logging.sh

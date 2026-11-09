@@ -1,6 +1,11 @@
-# fw-site-a: Site A firewall ruleset
+# fw-site-a: Site A firewall ruleset (with logging)
 # Interfaces: eth1 = App zone (192.0.2.0/25), eth2 = Database zone (192.0.2.128/25),
 #             eth3 = transit link to Site B, wg0 = WireGuard tunnel
+#
+# Logging: "log ... group 1" sends the packet's details to NFLOG group 1.
+# ulogd (see configs/ulogd.conf) listens on that group and writes each event
+# to syslog, and rsyslog forwards it through the tunnel to the collector.
+#
 # Loaded by scripts/zones.sh. It starts with "flush ruleset", so loading it again
 # replaces the rules instead of adding duplicates.
 
@@ -22,8 +27,9 @@ table inet filter {
     # Zone hosts may ping their gateway (for troubleshooting)
     iifname { "eth1", "eth2" } icmp type echo-request accept
 
-    # Everything else is dropped. Counted here so we can see it,
-    # and this is where the log rule goes in the next step.
+    # Log dropped IPv4 packets (rate limited so a flood cannot swamp the logs),
+    # then drop everything else.
+    meta nfproto ipv4 limit rate 10/second burst 20 packets log prefix "FWA-DROP-INPUT: " group 1
     counter drop
   }
 
@@ -34,10 +40,13 @@ table inet filter {
     ct state established,related accept
     ct state invalid drop
 
-    # App zone -> Database zone, database port only (assumed PostgreSQL, TCP 5432)
-    iifname "eth1" oifname "eth2" ip saddr 192.0.2.0/25 ip daddr 192.0.2.128/25 tcp dport 5432 counter accept
+    # App zone -> Database zone, database port only (assumed PostgreSQL, TCP 5432).
+    # Replies are accepted above, so only NEW connections reach this rule,
+    # which means one log line per connection.
+    iifname "eth1" oifname "eth2" ip saddr 192.0.2.0/25 ip daddr 192.0.2.128/25 tcp dport 5432 log prefix "FWA-ACCEPT-APP2DB: " group 1 counter accept
 
     # Nothing else may cross zones, and the Database zone cannot start connections
+    meta nfproto ipv4 limit rate 10/second burst 20 packets log prefix "FWA-DROP-FORWARD: " group 1
     counter drop
   }
 
@@ -57,6 +66,7 @@ table inet filter {
     # Tunnel health check: ping the far end of the tunnel
     oifname "wg0" ip daddr 10.100.100.2 icmp type echo-request accept
 
+    meta nfproto ipv4 limit rate 10/second burst 20 packets log prefix "FWA-DROP-OUTPUT: " group 1
     counter drop
   }
 }
