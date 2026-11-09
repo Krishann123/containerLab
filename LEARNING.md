@@ -26,3 +26,10 @@ Tried: rebuilding the whole project from scratch so its easier for me to make th
 Broke: ...
 Learned: how to setup rsyslog, use of udp port 514 and how to route logs properly through tunnel without it being stopped by the firewall through AI gemini notebooks feature.
 Next: finishing up one build command deliverable using the rebuild.sh 
+
+Day 5
+Goal: Split Site A into zones and get real firewall logs from fw-site-a into the Site B collector.
+Tried: Gave the 4 PCs IPs with fw-site-a as their gateway, wrote default-deny nftables rules (App to DB on port 5432 only), then used NFLOG + ulogd so blocked and allowed traffic becomes syslog and goes through the tunnel. Tested with ping and nc and checked the FWA- lines on the collector.
+Broke: After the codespace restarted the lab was gone (containers only had eth0), so zones.sh failed with "can't find device eth1". I also put fw-site-a.nft in scripts/ instead of configs/, so zones.sh couldn't find it.
+Learned: The lab doesn't survive a codespace restart, so everything must live in scripts. nftables' normal log can't be read from a container, so NFLOG + ulogd is needed. The firewall never sees traffic inside one zone. Default deny needs rules in input, forward and output. (AI, then verified by running the tests in the lab)
+Next: Finish the README, then the failure test (take the tunnel down and see which logs are lost).
