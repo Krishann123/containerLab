@@ -62,4 +62,24 @@ docker exec $F ping -c2 -W1 10.100.100.2
 Fails
 docker exec $F ping -c2 -W1 198.51.100.10 **only UDP 514 is allowed
 
+which should be allowed (App to DB on 5432):
+docker exec -d $PC3 sh -c 'nc -l -p 5432 > /tmp/db-received.txt'
+docker exec $PC1 sh -c 'echo "hello db from pc1" | nc -w 2 192.0.2.130 5432'
+sleep 1
+docker exec $PC3 cat /tmp/db-received.txt
+
+Two flows that should be blocked:
+# wrong port, App to DB
+docker exec -d $PC3 sh -c 'nc -l -p 2222 > /tmp/blocked-port.txt'
+docker exec $PC1 sh -c 'echo "should be blocked" | nc -w 2 192.0.2.130 2222'
+docker exec $PC3 cat /tmp/blocked-port.txt
+
+# wrong direction, DB to App
+docker exec -d $PC1 sh -c 'nc -l -p 5432 > /tmp/blocked-dir.txt'
+docker exec $PC3 sh -c 'echo "should be blocked" | nc -w 2 192.0.2.10 5432'
+docker exec $PC1 cat /tmp/blocked-dir.txt
+
+# clean up the listeners that are still waiting
+docker exec $PC3 pkill nc
+docker exec $PC1 pkill nc
 

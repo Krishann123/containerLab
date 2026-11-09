@@ -98,3 +98,5 @@ sleep 3
 docker exec $A logger -t rebuild-test "hello from fw-site-a"
 sleep 2
 docker exec $S sh -c 'find /var/log/remote -type f; cat /var/log/remote/*/syslog.log'
+
+sh scripts/zones.sh

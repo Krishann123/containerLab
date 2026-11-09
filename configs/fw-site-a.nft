@@ -1,0 +1,62 @@
+# fw-site-a: Site A firewall ruleset
+# Interfaces: eth1 = App zone (192.0.2.0/25), eth2 = Database zone (192.0.2.128/25),
+#             eth3 = transit link to Site B, wg0 = WireGuard tunnel
+# Loaded by scripts/zones.sh. It starts with "flush ruleset", so loading it again
+# replaces the rules instead of adding duplicates.
+
+flush ruleset
+
+table inet filter {
+
+  # Traffic addressed to the firewall itself
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    ct state established,related accept
+    ct state invalid drop
+    iifname "lo" accept
+
+    # WireGuard handshake from the Site B firewall
+    iifname "eth3" ip saddr 203.0.113.2 udp dport 51820 accept
+
+    # Zone hosts may ping their gateway (for troubleshooting)
+    iifname { "eth1", "eth2" } icmp type echo-request accept
+
+    # Everything else is dropped. Counted here so we can see it,
+    # and this is where the log rule goes in the next step.
+    counter drop
+  }
+
+  # Traffic passing THROUGH the firewall between zones
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    ct state established,related accept
+    ct state invalid drop
+
+    # App zone -> Database zone, database port only (assumed PostgreSQL, TCP 5432)
+    iifname "eth1" oifname "eth2" ip saddr 192.0.2.0/25 ip daddr 192.0.2.128/25 tcp dport 5432 counter accept
+
+    # Nothing else may cross zones, and the Database zone cannot start connections
+    counter drop
+  }
+
+  # Traffic that the firewall itself sends
+  chain output {
+    type filter hook output priority 0; policy drop;
+
+    ct state established,related accept
+    oifname "lo" accept
+
+    # The tunnel: WireGuard packets to Site B
+    oifname "eth3" ip daddr 203.0.113.2 udp dport 51820 accept
+
+    # The log flow: syslog to the collector, through the tunnel
+    oifname "wg0" ip daddr 198.51.100.10 udp dport 514 accept
+
+    # Tunnel health check: ping the far end of the tunnel
+    oifname "wg0" ip daddr 10.100.100.2 icmp type echo-request accept
+
+    counter drop
+  }
+}
