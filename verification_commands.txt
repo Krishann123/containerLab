@@ -83,3 +83,8 @@ docker exec $PC1 cat /tmp/blocked-dir.txt
 docker exec $PC3 pkill nc
 docker exec $PC1 pkill nc
 
+#routine start
+git pull --rebase
+sh scripts/rebuild.sh
+source scripts/shortcuts.sh
+sh scripts/healthcheck.sh
