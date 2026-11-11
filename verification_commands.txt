@@ -83,8 +83,66 @@ docker exec $PC1 cat /tmp/blocked-dir.txt
 docker exec $PC3 pkill nc
 docker exec $PC1 pkill nc
 
+
+------------------------------------------------------------
+
 #routine start
 git pull --rebase
 sh scripts/rebuild.sh
 source scripts/shortcuts.sh
 sh scripts/healthcheck.sh
+
+#examples 1:
+docker exec $PC1 sh -c 'echo test | nc -w 2 192.0.2.130 2222'
+sleep 2
+docker exec $S grep FWA-DROP-FORWARD /var/log/remote/fw-site-a/syslog.log | tail -n 1
+
+
+#examples 2:
+docker exec $A ip -br -4 addr
+docker exec $B ip -br -4 addr
+docker exec $S ip -br -4 addr
+docker exec $PC1 ip addr show eth1 | grep 'inet '
+docker exec $PC3 ip addr show eth1 | grep 'inet '
+
+examples 3: 
+docker exec $A wg show
+docker exec $A ping -c2 -W1 10.100.100.2
+docker exec $A ping -c2 -W1 198.51.100.10
+
+site B rules:
+docker exec $B nft list ruleset
+
+Site A rules:
+docker exec $A nft list ruleset
+
+Inter Zone connection check:
+docker exec $PC1 ping -c2 -W1 192.0.2.11
+docker exec $PC1 ping -c2 -W1 192.0.2.130
+
+Database listener port:
+docker exec -d $PC3 sh -c 'nc -l -p 5432 > /tmp/db-received.txt'
+docker exec $PC1 sh -c 'echo "hello db from pc1" | nc -w 2 192.0.2.130 5432'
+sleep 1
+docker exec $PC3 cat /tmp/db-received.txt
+
+Db -> app pc:
+docker exec $PC3 sh -c 'echo test | nc -w 2 192.0.2.10 5432'
+
+FW counters:
+docker exec $A nft list chain inet filter forward
+
+Logs at collector:
+docker exec $S ls /var/log/remote
+docker exec $S grep FWA- /var/log/remote/fw-site-a/syslog.log | tail -n 5
+
+How logs are produced:
+docker exec $A nft list chain inet filter forward | grep log
+docker exec $A grep '^stack' /etc/ulogd.conf
+docker exec $A cat /etc/rsyslog.conf
+docker exec $S cat /etc/rsyslog.conf
+
+how script tells failures apart:
+docker exec $A pkill ulogd
+sh scripts/healthcheck.sh
+docker exec $A sh -c 'ulogd -d -c /etc/ulogd.conf'

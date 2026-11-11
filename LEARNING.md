@@ -33,3 +33,10 @@ Tried: Gave the 4 PCs IPs with fw-site-a as their gateway, wrote default-deny nf
 Broke: After the codespace restarted the lab was gone (containers only had eth0), so zones.sh failed with "can't find device eth1". I also put fw-site-a.nft in scripts/ instead of configs/, so zones.sh couldn't find it.
 Learned: The lab doesn't survive a codespace restart, so everything must live in scripts. nftables' normal log can't be read from a container, so NFLOG + ulogd is needed. The firewall never sees traffic inside one zone. Default deny needs rules in input, forward and output. (AI, then verified by running the tests in the lab)
 Next: Finish the README, then the failure test (take the tunnel down and see which logs are lost).
+
+Day 6
+Goal: finalizing everything
+Tried: I re-ran my commands
+Broke: ended up with duplicate firewall rules and a stale tunnel peer. That is why every step now starts clean, and why rules begin with flush ruleset
+Learned:...
+Next: ...
